@@ -1,0 +1,48 @@
+# it is assumed that linux mint has been installed and a user with “sudo” permissions is used
+# install golang
+sudo add-apt-repository ppa:longsleep/golang-backports
+sudo apt update
+sudo apt -y install golang-go-1.14
+
+# install container runtime
+echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /' | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+curl -fsSL https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/xUbuntu_20.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/devel_kubic_libcontainers_stable.gpg > /dev/null
+sudo apt update
+sudo apt install podman=2.2.1~4 # this also installs runc as a dependency. If not, proceed with step 6
+sudo apt -y install runc=1.0.0~rc10-0ubuntu1
+
+# install kind cluster
+cd $HOME
+GO111MODULE="on" go get sigs.k8s.io/kind@v0.10.0
+cat <<EOF > /tmp/kind-config.yaml
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+kubeadmConfigPatches:
+- |
+  apiVersion: kubeadm.k8s.io/v1beta2
+  kind: ClusterConfiguration
+  kubernetesVersion: v1.19.7
+runtimeConfig:
+  settings.k8s.io/v1alpha1: true
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+    - |
+      kind: InitConfiguration
+      nodeRegistration:
+        kubeletExtraArgs:
+          node-labels: "ingress-ready=true"
+    extraPortMappings:
+    - containerPort: 80
+      hostPort: 80
+      protocol: TCP
+    - containerPort: 443
+      hostPort: 443
+      protocol: TCP
+EOF
+kind create cluster --name t847 --image kindest/node:v1.19.7 --config=/tmp/kind-config.yaml
+kind get kubeconfig --name t847 > /tmp/t847-kubeconfig
+export KUBECONFIG=/tmp/t847-kubeconfig
+
+# install operator lifecycle manager
+curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.16.1/install.sh | bash -s 0.16.1

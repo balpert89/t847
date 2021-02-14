@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: malicious-behaviour-posttest-pod
+  namespace: usecase-03
+spec:
+  containers:
+    - name: malicious-behaviour
+      image: mtr.external.otc.telekomcloud.com/balpert/t847:u3

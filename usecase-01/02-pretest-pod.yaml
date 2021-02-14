@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vulnerability-scanning-pod
+  namespace: usecase-01
+spec:
+  containers:
+    - name: vulnerability-scanning
+      image: mtr.external.otc.telekomcloud.com/balpert/t847:u1

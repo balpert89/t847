@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aqua-agent
+  namespace: aqua
+spec:
+  selector:
+    matchLabels:
+      app: aqua-agent
+  template:
+    metadata:
+      labels:
+        app: aqua-agent
+      name: aqua-agent
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/primary: ''
+      serviceAccount: aqua-sa
+      hostPID: true
+      imagePullSecrets:
+        - name: aqua-registry
+      containers:
+      - name: aqua-agent
+        image: registry.aquasec.com/enforcer:4.6.20135
+        securityContext:
+          privileged: true
+        env:
+        - name: SCALOCK_TOKEN
+          value: "c2996ee2-3ab3-4d2d-a939-c5d63c1da3d2"
+        - name: SCALOCK_SERVER
+          value: aqua-gateway:8443
+        - name: AQUA_LOGICAL_NAME
+          value: ""
+        - name: AQUA_MODE
+          value: "SERVICE"
+        - name: AQUA_RUNC_INTERCEPTION
+          value: "1"
+        volumeMounts:
+        - mountPath: /var/run
+          name: var-run
+        - mountPath: /dev
+          name: dev
+        - mountPath: /host/sys
+          name: sys
+          readOnly: true
+        - mountPath: /host/proc
+          name: proc
+          readOnly: true
+        - mountPath: /host/etc
+          name: etc
+        - mountPath: /data
+          name: aquasec-data	
+        - mountPath: /host/opt/aquasec
+          name: aquasec
+        - mountPath: /opt/aquasec/tmp
+          name: aquasec-tmp
+        - mountPath: /opt/aquasec/audit
+          name: aquasec-audit
+      volumes:
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: dev
+        hostPath:
+          path: /dev
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: etc
+        hostPath:
+          path: /etc
+      - name: aquasec
+        hostPath:
+          path: /opt/aquasec
+      - name: aquasec-tmp
+        hostPath:
+          path: /opt/aquasec/tmp
+      - name: aquasec-audit
+        hostPath:
+          path: /opt/aquasec/audit
+      - name: aquasec-data
+        hostPath:
+          path: /opt/aquasec/data
